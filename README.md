@@ -1,3 +1,7 @@
+# WARNING: DO NOT COPY FOR YOUR OWN USE IF ITS FOR AFIT (at your own risk)
+
+
+
 # AFIT
 
 The AFIT (Standing for *Arithmetic for IT*) project has for for aim to
