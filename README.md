@@ -1,3 +1,8 @@
+# WARNING: DO NOT COPY FOR YOUR OWN USE IF ITS FOR AFIT (at your own risk)
+- Completed files : all
+-- Methods to rework : Source/scalable/scalable.ml | quot_b: int list -> int list -> int list (not bitwise division, unefficient, may lead to crashes if dividing a large value by a small one, causes problems with RSA and El Gamal encryption algorithms aswell as Powers)
+
+
 # AFIT
 
 The AFIT (Standing for *Arithmetic for IT*) project has for for aim to
