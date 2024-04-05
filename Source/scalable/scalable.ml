@@ -17,13 +17,13 @@ let rec reverse l1 l2 = match l1 with
     e::l -> reverse l (e::l2)
 
 let remove_zeros l =
-  let r = reverse l [] in
+  let r = List.rev l in
   let rec rr l = match l with
       [] ->  [] |
       0::l -> rr l |
       e::l -> e::l
   in
-  reverse (rr r) []
+  List.rev (rr r)
 
 let abs x = if x < 0 then (-x) else x
 
@@ -273,8 +273,25 @@ let diff_n nA nB =
                       if e = 1 then 0::(rd l [] 0)
                       else
                         1::(rd l [] 1) |
-      (a::l1, b::l2) ->
-           (if a = b then borrow else 1-borrow)::(rd l1 l2 (match (a,b,borrow) with (0,1,0) -> 1 | (_,_,0) -> 0 | (1,0,1) -> 0 _ -> 1)) |
+      (a::l1, b::l2) ->       
+        (*(if a = b then borrow else 1 - borrow)::(rd l1 l2 (if a >= b then borrow else 1 - borrow))
+        *)
+        let aux a b borrow =
+          if borrow = 0 then
+            match (a, b) with
+              (0,0) | (1,1) -> 0::(rd l1 l2 0) |
+              (1,0) -> 1::(rd l1 l2 0) |
+              (0,1) -> 1::(rd l1 l2 1) |
+              _ -> failwith "unused"
+          else
+            match (a,b) with
+              (1, 0) -> 0::(rd l1 l2 0) |
+              (1, 1) -> 1::(rd l1 l2 1) |
+              (0, 1) -> 0::(rd l1 l2 1) |
+              (0, 0) -> 1::(rd l1 l2 1) |
+              _ -> failwith "unused"
+        in
+        aux a b borrow
   in
   remove_zeros (rd nA nB 0)
 
@@ -377,6 +394,89 @@ let quot_b bA bB =
   else
     let q = [0;1] in
     euclidean_binary_division_quotient (diff_b bA bB) bB q*)
+
+let rec getFirstsOfA n a res =
+  if n = 0 then (res, a)
+  else match a with
+      e::l -> getFirstsOfA (n-1) l (e::res) |
+      _ -> failwith "weird"
+
+let extBuff1 buffer nA =
+  match nA with
+    [] -> (buffer, []) |
+    e::l -> if buffer = [] && e = 0 then (buffer, l) else (e::buffer, l)
+    
+            
+let build_list_str li =
+  let rec main l = match l with
+      [] -> "]" |
+      [e] -> string_of_int e ^ "]" |
+      e::l -> (string_of_int e) ^ "; " ^ (main l)
+  in
+  "[" ^ main li
+
+(*
+let debug_quot_n nA nB =
+  if nA <<! nB then []
+  else if equalN nA nB then [1]
+  else 
+    let b = List.rev nB and a = List.rev nA in
+    let (initBuffer, initA) = getFirstsOfA (List.length b) a [] in
+    let rec theDivision a buffer = 
+      let () = Printf.printf "\ncomparison: buffer = %s, divisor = %s \nbuffer greater than or equal than divisor: %b\n" (build_list_str (List.rev buffer)) (build_list_str b) (buffer >=! nB) in
+      if buffer <<! nB then
+        let () = Printf.printf "substraction not possible, adding 0 to output" in
+        if a = [] then let () = Printf.printf "\ndividend empty, returning output\n" in [0] else
+          let (newBuffer, newA) = extBuff1 buffer a in 
+          let () = Printf.printf "\nextending buffer:\n new buffer = %s , new a = %s\n" (build_list_str (List.rev newBuffer)) (build_list_str newA) in 
+          0::(theDivision newA newBuffer)
+      else
+        let newBuff = diff_n buffer nB in
+        let () = Printf.printf "\nsubstraction possible, sub: %s - %s = %s \nadding 1 to output \nnew buffer = result = %s\n" (build_list_str (List.rev buffer)) (build_list_str b) (build_list_str (List.rev newBuff)) (build_list_str (List.rev newBuff)) in 
+        if a = [] then let () = Printf.printf "\ndividend empty, returning output\n" in [1] else
+          let (newBuffer, newA) = extBuff1 newBuff a in
+          let () = Printf.printf " extending buffer: new buffer = %s , new a = %s\n" (build_list_str (List.rev newBuffer)) (build_list_str newA) in 
+          1::(theDivision newA newBuffer)
+    in
+    let (initBuffer, initA) = if initBuffer <<! nB then extBuff1 initBuffer initA else (initBuffer, initA) in
+    let () = Printf.printf "init: \nbuffer = first %s of a: %s and new a = %s\n" (string_of_int (List.length initBuffer)) (build_list_str (List.rev initBuffer)) (build_list_str initA)in
+    let res = List.rev (theDivision initA initBuffer) in
+    let () = Printf.printf "output is: %s (%s)\n" (build_list_str res) (string_of_int (to_int (0::res))) in
+    res 
+*)
+      
+let quot_n nA nB =
+  if nA <<! nB then []
+  else if equalN nA nB then [1]
+  else 
+    let b = List.rev nB and a = List.rev nA in
+    let (initBuffer, initA) = getFirstsOfA (List.length b) a [] in
+    let rec theDivision a buffer = 
+      if buffer <<! nB then
+        if a = [] then [0] else
+          let (newBuffer, newA) = extBuff1 buffer a in 
+          0::(theDivision newA newBuffer)
+      else
+        let newBuff = diff_n buffer nB in
+        if a = [] then [1] else
+          let (newBuffer, newA) = extBuff1 newBuff a in
+          1::(theDivision newA newBuffer)
+    in
+    let (initBuffer, initA) = if initBuffer <<! nB then extBuff1 initBuffer initA else (initBuffer, initA) in
+    List.rev (theDivision initA initBuffer)
+
+let quot_b bA bB =
+  match (bA, bB) with
+    (_, []) -> failwith "division by zero" |
+    ([], _) -> [] |
+    (a::l1, b::l2) ->
+      let naturalPart = quot_n l1 l2 in
+      if naturalPart = [] then 
+        []
+      else
+        (if a = b then 0 else 1)::(naturalPart)
+
+(*
 let quot_b bA bB =
   let rec div nA nB q =
     if nA >=! nB then
@@ -392,6 +492,7 @@ let quot_b bA bB =
       if l1 = l2 then sign::[1] else
       if (signA < signB) then sign::(remove_zeros (add_n q [1])) else
         sign::(remove_zeros q)
+*)
 
 
 (** Modulo of a bitarray against a positive one.
